@@ -1,0 +1,49 @@
+import { Calculator, Gauge, ListChecks } from "lucide-react";
+
+export type AppView = "calculator" | "quotes";
+
+interface HeaderProps {
+  view: AppView;
+  onViewChange: (view: AppView) => void;
+}
+
+export function Header({ view, onViewChange }: HeaderProps) {
+  return (
+    <header className="border-b border-ink-800 bg-ink-900">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 text-ink-950">
+            <Gauge size={18} />
+          </span>
+          <div className="leading-none">
+            <p className="font-display text-lg font-bold tracking-tight text-ink-50">DRIVELINE</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ink-400">Finance</p>
+          </div>
+        </div>
+
+        <nav className="flex items-center gap-1 rounded-lg border border-ink-800 bg-ink-950 p-1">
+          <button
+            type="button"
+            onClick={() => onViewChange("calculator")}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+              view === "calculator" ? "bg-brand-500 text-ink-950" : "text-ink-400 hover:text-ink-200"
+            }`}
+          >
+            <Calculator size={13} /> Calculator
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewChange("quotes")}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+              view === "quotes" ? "bg-brand-500 text-ink-950" : "text-ink-400 hover:text-ink-200"
+            }`}
+          >
+            <ListChecks size={13} /> Quotes
+          </button>
+        </nav>
+
+        <p className="hidden text-xs text-ink-400 lg:block">Car loan repayment calculator</p>
+      </div>
+    </header>
+  );
+}
