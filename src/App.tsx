@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { Header, type AppView } from "./components/Header";
+import { AuthGate } from "./components/AuthGate";
 import { SummaryPanel } from "./components/SummaryPanel";
 import { ClientProfileCard, LenderCard, PurchaseDetailsCard, RepaymentStructureCard } from "./components/DealSections";
 import { TargetRepaymentCard } from "./components/TargetRepaymentCard";
@@ -7,11 +9,20 @@ import { QuotesView } from "./components/QuotesView";
 import { calculateDeal, cleanNumber } from "./lib/calculator";
 import { DEFAULT_LENDERS, DEFAULT_LENDER_KEY } from "./lib/lenders";
 import { computeTargetScenarios } from "./lib/targetSolver";
-import { loadSavedQuotes, persistSavedQuotes, removeSavedQuote } from "./lib/quotes";
+import { loadSavedQuotes, removeSavedQuote, saveQuote as saveQuoteRemote } from "./lib/quotes";
 import { buildQuoteText, downloadQuotePdf } from "./lib/export";
 import type { DealInputs, LenderFees, LenderTable, SavedQuote, TargetVariable } from "./lib/types";
 
 export default function App() {
+  return <AuthGate>{(session, signOut) => <AppContent session={session} onSignOut={signOut} />}</AuthGate>;
+}
+
+interface AppContentProps {
+  session: Session;
+  onSignOut: () => void;
+}
+
+function AppContent({ session, onSignOut }: AppContentProps) {
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [vehicle, setVehicle] = useState("");
@@ -32,10 +43,19 @@ export default function App() {
   const [targetPreference, setTargetPreference] = useState("auto");
   const [targetLocks, setTargetLocks] = useState<TargetVariable[]>([]);
 
-  const [savedQuotes, setSavedQuotes] = useState<SavedQuote[]>(() => loadSavedQuotes());
+  const [savedQuotes, setSavedQuotes] = useState<SavedQuote[]>([]);
+  const [quotesLoading, setQuotesLoading] = useState(true);
+  const [quotesError, setQuotesError] = useState<string | null>(null);
 
   const [showRate, setShowRate] = useState(false);
   const [view, setView] = useState<AppView>("calculator");
+
+  useEffect(() => {
+    loadSavedQuotes()
+      .then(setSavedQuotes)
+      .catch((err) => setQuotesError(err instanceof Error ? err.message : "Failed to load saved quotes."))
+      .finally(() => setQuotesLoading(false));
+  }, []);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -127,21 +147,14 @@ export default function App() {
     }));
   }
 
-  function saveQuote() {
-    const quote: SavedQuote = {
-      id: Date.now(),
-      createdAt: new Date().toLocaleString(),
-      clientName,
-      clientPhone,
-      vehicle,
-      stockRef,
-      lenderKey,
-      inputs,
-      lenderFees,
-    };
-    const next = [quote, ...savedQuotes].slice(0, 50);
-    setSavedQuotes(next);
-    persistSavedQuotes(next);
+  async function saveQuote() {
+    setQuotesError(null);
+    try {
+      const quote = await saveQuoteRemote({ clientName, clientPhone, vehicle, stockRef, lenderKey, inputs, lenderFees });
+      setSavedQuotes((current) => [quote, ...current]);
+    } catch (err) {
+      setQuotesError(err instanceof Error ? err.message : "Failed to save quote.");
+    }
   }
 
   function loadQuote(quote: SavedQuote) {
@@ -161,8 +174,14 @@ export default function App() {
     setView("calculator");
   }
 
-  function deleteQuote(id: number) {
-    setSavedQuotes(removeSavedQuote(savedQuotes, id));
+  async function deleteQuote(id: string) {
+    setQuotesError(null);
+    try {
+      await removeSavedQuote(id);
+      setSavedQuotes((current) => current.filter((q) => q.id !== id));
+    } catch (err) {
+      setQuotesError(err instanceof Error ? err.message : "Failed to delete quote.");
+    }
   }
 
   const quoteText = useMemo(() => buildQuoteText(deal), [deal]);
@@ -172,10 +191,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-ink-950">
-      <Header view={view} onViewChange={setView} />
+      <Header view={view} onViewChange={setView} userEmail={session.user.email ?? ""} onSignOut={onSignOut} />
       <main className="mx-auto max-w-6xl px-6 py-6">
+        {quotesError && (
+          <div className="mb-5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-400">{quotesError}</div>
+        )}
         {view === "quotes" ? (
-          <QuotesView quotes={savedQuotes} onLoad={loadQuote} onDelete={deleteQuote} />
+          <QuotesView quotes={savedQuotes} loading={quotesLoading} onLoad={loadQuote} onDelete={deleteQuote} />
         ) : (
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_1fr_320px]">
             <div className="flex flex-col gap-5 lg:order-1">

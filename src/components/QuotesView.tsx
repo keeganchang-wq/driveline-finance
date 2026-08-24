@@ -5,11 +5,12 @@ import type { SavedQuote } from "../lib/types";
 
 interface QuotesViewProps {
   quotes: SavedQuote[];
+  loading: boolean;
   onLoad: (quote: SavedQuote) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
 }
 
-export function QuotesView({ quotes, onLoad, onDelete }: QuotesViewProps) {
+export function QuotesView({ quotes, loading, onLoad, onDelete }: QuotesViewProps) {
   const [search, setSearch] = useState("");
   const [lenderFilter, setLenderFilter] = useState("all");
 
@@ -67,7 +68,9 @@ export function QuotesView({ quotes, onLoad, onDelete }: QuotesViewProps) {
         {rows.length} of {quotes.length} quote{quotes.length === 1 ? "" : "s"}
       </p>
 
-      {rows.length === 0 ? (
+      {loading ? (
+        <p className="rounded-lg bg-ink-800 p-4 text-center text-sm text-ink-400">Loading quotes…</p>
+      ) : rows.length === 0 ? (
         <p className="rounded-lg bg-ink-800 p-4 text-center text-sm text-ink-400">
           {quotes.length === 0 ? "No saved quotes yet. Save a quote from the calculator to see it here." : "No quotes match your filters."}
         </p>

@@ -1,13 +1,15 @@
-import { Calculator, Gauge, ListChecks } from "lucide-react";
+import { Calculator, Gauge, ListChecks, LogOut } from "lucide-react";
 
 export type AppView = "calculator" | "quotes";
 
 interface HeaderProps {
   view: AppView;
   onViewChange: (view: AppView) => void;
+  userEmail: string;
+  onSignOut: () => void;
 }
 
-export function Header({ view, onViewChange }: HeaderProps) {
+export function Header({ view, onViewChange, userEmail, onSignOut }: HeaderProps) {
   return (
     <header className="border-b border-ink-800 bg-ink-900">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
@@ -42,7 +44,18 @@ export function Header({ view, onViewChange }: HeaderProps) {
           </button>
         </nav>
 
-        <p className="hidden text-xs text-ink-400 lg:block">Car loan repayment calculator</p>
+        <div className="flex items-center gap-2">
+          <span className="hidden max-w-[160px] truncate text-xs text-ink-400 sm:block">{userEmail}</span>
+          <button
+            type="button"
+            onClick={onSignOut}
+            aria-label="Sign out"
+            className="flex items-center gap-1.5 rounded-lg border border-ink-800 bg-ink-950 px-2.5 py-1.5 text-xs font-semibold text-ink-400 transition hover:border-rose-500/40 hover:text-rose-400"
+          >
+            <LogOut size={13} />
+            <span className="hidden sm:inline">Sign out</span>
+          </button>
+        </div>
       </div>
     </header>
   );

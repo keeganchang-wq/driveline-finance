@@ -59,7 +59,7 @@ export interface AmortizationRow {
 }
 
 export interface SavedQuote {
-  id: number;
+  id: string;
   createdAt: string;
   clientName: string;
   clientPhone: string;

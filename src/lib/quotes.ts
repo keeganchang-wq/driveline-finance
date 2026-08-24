@@ -1,23 +1,79 @@
-import type { SavedQuote } from "./types";
+import { supabase } from "./supabase";
+import type { DealInputs, LenderKey, LenderTable, SavedQuote } from "./types";
 
-const STORAGE_KEY = "driveline.savedQuotes";
-
-// Local-only for now. Swap this module's implementation for Supabase calls later —
-// callers only depend on load/save/remove, not on localStorage.
-export function loadSavedQuotes(): SavedQuote[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
-  } catch {
-    return [];
-  }
+interface QuoteRow {
+  id: string;
+  client_name: string;
+  client_phone: string;
+  vehicle: string;
+  stock_ref: string;
+  lender_key: string;
+  inputs: DealInputs;
+  lender_fees: LenderTable;
+  created_at: string;
 }
 
-export function persistSavedQuotes(quotes: SavedQuote[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(quotes));
+function rowToQuote(row: QuoteRow): SavedQuote {
+  return {
+    id: row.id,
+    createdAt: new Date(row.created_at).toLocaleString(),
+    clientName: row.client_name,
+    clientPhone: row.client_phone,
+    vehicle: row.vehicle,
+    stockRef: row.stock_ref,
+    lenderKey: row.lender_key,
+    inputs: row.inputs,
+    lenderFees: row.lender_fees,
+  };
 }
 
-export function removeSavedQuote(quotes: SavedQuote[], id: number): SavedQuote[] {
-  const next = quotes.filter((q) => q.id !== id);
-  persistSavedQuotes(next);
-  return next;
+export async function loadSavedQuotes(): Promise<SavedQuote[]> {
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("id, client_name, client_phone, vehicle, stock_ref, lender_key, inputs, lender_fees, created_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) throw error;
+  return (data ?? []).map(rowToQuote);
+}
+
+export interface NewQuoteInput {
+  clientName: string;
+  clientPhone: string;
+  vehicle: string;
+  stockRef: string;
+  lenderKey: LenderKey;
+  inputs: DealInputs;
+  lenderFees: LenderTable;
+}
+
+export async function saveQuote(quote: NewQuoteInput): Promise<SavedQuote> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const { data, error } = await supabase
+    .from("quotes")
+    .insert({
+      user_id: user.id,
+      client_name: quote.clientName,
+      client_phone: quote.clientPhone,
+      vehicle: quote.vehicle,
+      stock_ref: quote.stockRef,
+      lender_key: quote.lenderKey,
+      inputs: quote.inputs,
+      lender_fees: quote.lenderFees,
+    })
+    .select("id, client_name, client_phone, vehicle, stock_ref, lender_key, inputs, lender_fees, created_at")
+    .single();
+
+  if (error) throw error;
+  return rowToQuote(data);
+}
+
+export async function removeSavedQuote(id: string): Promise<void> {
+  const { error } = await supabase.from("quotes").delete().eq("id", id);
+  if (error) throw error;
 }
