@@ -1,5 +1,5 @@
-import { lazy, Suspense, useState } from "react";
-import { Car, CalendarRange, ChevronDown, Landmark, Percent, User } from "lucide-react";
+import { lazy, Suspense, useRef, useState } from "react";
+import { Car, CalendarRange, Landmark, Percent, User } from "lucide-react";
 import { Card, NumberField, SelectField, TextField } from "./NumberField";
 import { cleanNumber, money } from "../lib/calculator";
 import type { DealResult, LenderFees, LenderTable } from "../lib/types";
@@ -25,7 +25,7 @@ interface ClientProfileProps {
 
 export function ClientProfileCard({ clientName, clientPhone, vehicle, stockRef, onChange }: ClientProfileProps) {
   return (
-    <Card title="Client profile" icon={<User size={15} />}>
+    <Card title="Client profile" icon={<User size={15} />} collapsible defaultOpen={false}>
       <div className="grid grid-cols-2 gap-4">
         <TextField label="Client name" value={clientName} onChange={(v) => onChange("clientName", v)} placeholder="Jordan Lee" />
         <TextField label="Phone" value={clientPhone} onChange={(v) => onChange("clientPhone", v)} placeholder="0400 000 000" />
@@ -44,56 +44,42 @@ interface LenderCardProps {
 }
 
 export function LenderCard({ lenderKey, lenderFees, onLenderChange, onFeeChange }: LenderCardProps) {
-  const [collapsed, setCollapsed] = useState(false);
   const lender = lenderFees[lenderKey];
   return (
     <Card
       title="Lender & fees"
       icon={<Landmark size={15} />}
-      action={
-        <div className="flex items-center gap-2">
-          {collapsed && (
-            <span className="whitespace-nowrap rounded-full bg-ink-800 px-2.5 py-1 text-[11px] font-medium normal-case tracking-normal text-ink-200">
-              {lender.name}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? "Expand lender & fees" : "Collapse lender & fees"}
-            aria-expanded={!collapsed}
-            className="rounded-lg p-1 text-ink-400 transition hover:bg-ink-800 hover:text-ink-200"
-          >
-            <ChevronDown size={16} className={`transition-transform ${collapsed ? "-rotate-90" : ""}`} />
-          </button>
-        </div>
+      collapsible
+      defaultOpen={true}
+      action={(open) =>
+        !open && (
+          <span className="whitespace-nowrap rounded-full bg-ink-800 px-2.5 py-1 text-[11px] font-medium normal-case tracking-normal text-ink-200">
+            {lender.name}
+          </span>
+        )
       }
     >
-      {!collapsed && (
-        <>
-          <label className="block">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">Lender</span>
-            <select
-              className="mt-1.5 w-full rounded-lg border border-ink-700 bg-ink-950 py-2.5 px-3 text-sm font-medium text-ink-50 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition"
-              value={lenderKey}
-              onChange={(e) => onLenderChange(e.target.value)}
-            >
-              {Object.entries(lenderFees).map(([key, l]) => (
-                <option key={key} value={key}>
-                  {l.name}
-                </option>
-              ))}
-            </select>
-          </label>
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">Lender</span>
+        <select
+          className="mt-1.5 w-full rounded-lg border border-ink-700 bg-ink-950 py-2.5 px-3 text-sm font-medium text-ink-50 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition"
+          value={lenderKey}
+          onChange={(e) => onLenderChange(e.target.value)}
+        >
+          {Object.entries(lenderFees).map(([key, l]) => (
+            <option key={key} value={key}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+      </label>
 
-          <div className="mt-4 flex flex-col gap-3">
-            <NumberField label="Origination fee" prefix="$" value={String(lender.originationFee)} onChange={(v) => onFeeChange("originationFee", v)} />
-            <NumberField label="Establishment fee" prefix="$" value={String(lender.establishmentFee)} onChange={(v) => onFeeChange("establishmentFee", v)} />
-            <NumberField label="PPSR" prefix="$" value={String(lender.ppsr)} onChange={(v) => onFeeChange("ppsr", v)} />
-            <NumberField label="Monthly account fee" prefix="$" value={String(lender.monthlyAccountFee)} onChange={(v) => onFeeChange("monthlyAccountFee", v)} />
-          </div>
-        </>
-      )}
+      <div className="mt-4 flex flex-col gap-3">
+        <NumberField label="Origination fee" prefix="$" value={String(lender.originationFee)} onChange={(v) => onFeeChange("originationFee", v)} />
+        <NumberField label="Establishment fee" prefix="$" value={String(lender.establishmentFee)} onChange={(v) => onFeeChange("establishmentFee", v)} />
+        <NumberField label="PPSR" prefix="$" value={String(lender.ppsr)} onChange={(v) => onFeeChange("ppsr", v)} />
+        <NumberField label="Monthly account fee" prefix="$" value={String(lender.monthlyAccountFee)} onChange={(v) => onFeeChange("monthlyAccountFee", v)} />
+      </div>
     </Card>
   );
 }
@@ -109,7 +95,7 @@ interface PurchaseDetailsProps {
 
 export function PurchaseDetailsCard({ purchasePrice, deposit, tradeAllowance, existingPayout, deal, onChange }: PurchaseDetailsProps) {
   return (
-    <Card title="Purchase details" icon={<Car size={15} />}>
+    <Card title="Purchase details" icon={<Car size={15} />} collapsible defaultOpen={true}>
       <div className="grid grid-cols-2 gap-4">
         <NumberField label="Purchase price" prefix="$" value={purchasePrice} onChange={(v) => onChange("purchasePrice", v)} />
         <NumberField label="Deposit" prefix="$" value={deposit} onChange={(v) => onChange("deposit", v)} />
@@ -142,11 +128,15 @@ interface RepaymentStructureProps {
   deal: DealResult;
   onChange: (field: "interestRate" | "loanTermMonths" | "balloonAmount", value: string) => void;
   showRate: boolean;
+  onToggleRate: () => void;
 }
 
-export function RepaymentStructureCard({ interestRate, loanTermMonths, balloonAmount, deal, onChange, showRate }: RepaymentStructureProps) {
+const LONG_PRESS_MS = 550;
+
+export function RepaymentStructureCard({ interestRate, loanTermMonths, balloonAmount, deal, onChange, showRate, onToggleRate }: RepaymentStructureProps) {
   const [showSchedule, setShowSchedule] = useState(false);
   const matchedPercent = matchedBalloonPercent(deal.purchasePrice, cleanNumber(balloonAmount));
+  const pressTimer = useRef<number | null>(null);
 
   function handleBalloonPercentChange(value: string) {
     if (value === "custom") return;
@@ -154,10 +144,36 @@ export function RepaymentStructureCard({ interestRate, loanTermMonths, balloonAm
     onChange("balloonAmount", String(Math.round((deal.purchasePrice * pct) / 100)));
   }
 
+  function handlePressStart() {
+    pressTimer.current = window.setTimeout(() => {
+      onToggleRate();
+      pressTimer.current = null;
+    }, LONG_PRESS_MS);
+  }
+
+  function handlePressEnd() {
+    if (pressTimer.current !== null) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  }
+
   return (
     <Card
-      title="Repayment structure"
+      title={
+        <span
+          onPointerDown={handlePressStart}
+          onPointerUp={handlePressEnd}
+          onPointerLeave={handlePressEnd}
+          onContextMenu={(e) => e.preventDefault()}
+          className="select-none"
+        >
+          Repayment structure
+        </span>
+      }
       icon={<Percent size={15} />}
+      collapsible
+      defaultOpen={true}
       action={
         <button
           type="button"

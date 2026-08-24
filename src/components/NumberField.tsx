@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 
 interface NumberFieldProps {
   label: string;
@@ -79,23 +80,43 @@ export function Card({
   action,
   children,
   className = "",
+  collapsible = false,
+  defaultOpen = true,
 }: {
-  title: string;
+  title: ReactNode;
   icon?: ReactNode;
-  action?: ReactNode;
+  action?: ReactNode | ((open: boolean) => ReactNode);
   children: ReactNode;
   className?: string;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const resolvedAction = typeof action === "function" ? action(open) : action;
+
   return (
     <section className={`rounded-2xl border border-ink-800 bg-ink-900 p-5 shadow-sm shadow-black/20 ${className}`}>
-      <h2 className="mb-4 flex items-center justify-between gap-2 font-display text-sm font-semibold uppercase tracking-wide text-ink-300">
+      <h2 className={`flex items-center justify-between gap-2 font-display text-sm font-semibold uppercase tracking-wide text-ink-300 ${open ? "mb-4" : ""}`}>
         <span className="flex items-center gap-2">
           {icon}
           {title}
         </span>
-        {action}
+        <span className="flex items-center gap-2">
+          {resolvedAction}
+          {collapsible && (
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              aria-label={open ? `Collapse ${typeof title === "string" ? title : "section"}` : `Expand ${typeof title === "string" ? title : "section"}`}
+              aria-expanded={open}
+              className="rounded-lg p-1 text-ink-400 transition hover:bg-ink-800 hover:text-ink-200"
+            >
+              <ChevronDown size={16} className={`transition-transform ${open ? "" : "-rotate-90"}`} />
+            </button>
+          )}
+        </span>
       </h2>
-      {children}
+      {(!collapsible || open) && children}
     </section>
   );
 }

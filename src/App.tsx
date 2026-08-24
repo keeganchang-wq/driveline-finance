@@ -228,6 +228,7 @@ function AppContent({ session, onSignOut }: AppContentProps) {
                 deal={deal}
                 onChange={handleRepaymentChange}
                 showRate={showRate}
+                onToggleRate={() => setShowRate((v) => !v)}
               />
             </div>
 

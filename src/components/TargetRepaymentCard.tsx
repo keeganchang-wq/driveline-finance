@@ -40,7 +40,7 @@ export function TargetRepaymentCard({
   notPossible,
 }: TargetRepaymentCardProps) {
   return (
-    <Card title="Target repayment" icon={<Target size={15} />}>
+    <Card title="Target repayment" icon={<Target size={15} />} collapsible defaultOpen={false}>
       <div className="grid grid-cols-2 gap-4">
         <NumberField label="Target monthly" prefix="$" value={targetMonthly} onChange={onTargetChange} />
         <label className="block">

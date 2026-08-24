@@ -1,4 +1,5 @@
-import { Download, MessageSquareText, Save, Mail } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, Download, MessageSquareText, Save, Mail } from "lucide-react";
 import { money } from "../lib/calculator";
 import type { DealResult } from "../lib/types";
 
@@ -11,39 +12,58 @@ interface SummaryPanelProps {
 }
 
 export function SummaryPanel({ deal, onSave, onPdf, smsHref, mailHref }: SummaryPanelProps) {
+  const [open, setOpen] = useState(true);
+
   return (
     <div className="sticky top-6 flex flex-col gap-4">
       <div className="rounded-2xl border border-ink-800 bg-gradient-to-br from-ink-800 to-ink-950 p-6 text-white shadow-lg shadow-black/30">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-400">Monthly repayment</p>
-        <p className="mt-2 font-display text-4xl font-bold tabular-nums">{money(deal.monthly)}</p>
-
-        <div className="mt-5 flex flex-col gap-2.5 border-t border-white/10 pt-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-ink-400">Weekly</p>
-            <p className="whitespace-nowrap font-display text-base font-semibold tabular-nums">{money(deal.weekly)}</p>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-400">Monthly repayment</p>
+            <p className="mt-2 font-display text-4xl font-bold tabular-nums">{money(deal.monthly)}</p>
           </div>
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-ink-400">Fortnightly</p>
-            <p className="whitespace-nowrap font-display text-base font-semibold tabular-nums">{money(deal.fortnightly)}</p>
-          </div>
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-ink-400">Amount financed</p>
-            <p className="whitespace-nowrap font-display text-base font-semibold tabular-nums">{money(deal.amountFinanced)}</p>
-          </div>
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-ink-400">Total interest</p>
-            <p className="whitespace-nowrap font-display text-base font-semibold tabular-nums">{money(deal.totalInterest)}</p>
-          </div>
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-ink-400">Total payable</p>
-            <p className="whitespace-nowrap font-display text-base font-semibold tabular-nums">{money(deal.totalPayable)}</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-label={open ? "Collapse payments" : "Expand payments"}
+            aria-expanded={open}
+            className="rounded-lg p-1 text-ink-400 transition hover:bg-white/10 hover:text-ink-200"
+          >
+            <ChevronDown size={16} className={`transition-transform ${open ? "" : "-rotate-90"}`} />
+          </button>
         </div>
 
-        <div className="mt-5 flex gap-2 border-t border-white/10 pt-4 text-xs">
-          <span className="shrink-0 whitespace-nowrap rounded-full bg-white/10 px-2.5 py-1 font-medium tabular-nums">LVR {deal.lvr.toFixed(1)}%</span>
-          <span className="shrink-0 whitespace-nowrap rounded-full bg-white/10 px-2.5 py-1 font-medium tabular-nums">Balloon {deal.balloonPercent.toFixed(1)}%</span>
-        </div>
+        {open && (
+          <>
+            <div className="mt-5 flex flex-col gap-2.5 border-t border-white/10 pt-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-ink-400">Weekly</p>
+                <p className="whitespace-nowrap font-display text-base font-semibold tabular-nums">{money(deal.weekly)}</p>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-ink-400">Fortnightly</p>
+                <p className="whitespace-nowrap font-display text-base font-semibold tabular-nums">{money(deal.fortnightly)}</p>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-ink-400">Amount financed</p>
+                <p className="whitespace-nowrap font-display text-base font-semibold tabular-nums">{money(deal.amountFinanced)}</p>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-ink-400">Total interest</p>
+                <p className="whitespace-nowrap font-display text-base font-semibold tabular-nums">{money(deal.totalInterest)}</p>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="whitespace-nowrap text-[11px] uppercase tracking-wide text-ink-400">Total payable</p>
+                <p className="whitespace-nowrap font-display text-base font-semibold tabular-nums">{money(deal.totalPayable)}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex gap-2 border-t border-white/10 pt-4 text-xs">
+              <span className="shrink-0 whitespace-nowrap rounded-full bg-white/10 px-2.5 py-1 font-medium tabular-nums">LVR {deal.lvr.toFixed(1)}%</span>
+              <span className="shrink-0 whitespace-nowrap rounded-full bg-white/10 px-2.5 py-1 font-medium tabular-nums">Balloon {deal.balloonPercent.toFixed(1)}%</span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2">
