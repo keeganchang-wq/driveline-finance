@@ -31,7 +31,11 @@ export function AuthGate({ children }: AuthGateProps) {
     });
     if (error) {
       setStatus("error");
-      setErrorMessage(error.message);
+      setErrorMessage(
+        error.message.includes("Database error saving new user")
+          ? "This email isn't approved for access. Ask the site owner to add it."
+          : error.message
+      );
       return;
     }
     setStatus("sent");
