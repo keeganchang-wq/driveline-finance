@@ -35,7 +35,7 @@ function AppContent({ session, onSignOut }: AppContentProps) {
   const [deposit, setDeposit] = useState("0");
   const [tradeAllowance, setTradeAllowance] = useState("15000");
   const [existingPayout, setExistingPayout] = useState("0");
-  const [interestRate, setInterestRate] = useState("7.49");
+  const [interestRate, setInterestRate] = useState("8.99");
   const [loanTermMonths, setLoanTermMonths] = useState("60");
   const [balloonAmount, setBalloonAmount] = useState("65000");
 
